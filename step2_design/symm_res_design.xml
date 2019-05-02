@@ -1,0 +1,24 @@
+<ROSETTASCRIPTS>
+    
+    <SCOREFXNS>
+        <ScoreFunction name="sym_score" weights="talaris2014" symmetric="1" />
+    </SCOREFXNS>
+    <TASKOPERATIONS>
+         <ReadResfile name="rrf" filename= "4mak_del.resfile" />
+      <InitializeFromCommandline name="ifcl"/>
+    </TASKOPERATIONS>
+    <FILTERS>
+    </FILTERS>
+    <MOVERS>
+        <SetupForSymmetry   name="setup_symm" definition="4mak.symm"/>
+        <SymPackRotamersMover name="sym_pack" scorefxn="sym_score" task_operations="ifcl,rrf"/>
+    </MOVERS>
+    <APPLY_TO_POSE>
+    </APPLY_TO_POSE>
+    <PROTOCOLS>
+        <Add mover_name="setup_symm"/>
+        <Add mover_name="sym_pack"/>
+    </PROTOCOLS>
+</ROSETTASCRIPTS>
+
+

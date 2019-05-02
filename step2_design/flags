@@ -1,0 +1,7 @@
+-parser:protocol step2_design/symm_design.xml
+-s step2_design/4mak_del_A_minimized.pdb
+-run:min_type lbfgs_armijo_nonmonotone
+-movemap movemapfile
+-out:prefix full_design_
+-nstruct 10
+-out:path:all output_files

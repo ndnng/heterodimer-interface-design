@@ -1,0 +1,422 @@
+<ROSETTASCRIPTS>
+    <SCOREFXNS>
+        <ScoreFunction name="hard" weights="beta"/>
+        <ScoreFunction name="hard_cst" weights="beta_cst" />
+        <ScoreFunction name="soft" weights="beta_soft"/>
+        ScoreFunction name="soft_symm" weights="talaris2014_cst" symmetric="1"/>
+        ScoreFunction name="hard_symm" weights="talaris2014_cst" symmetric="1"/>
+        <ScoreFunction name="bbmin_hard_cart" weights="beta_cart">
+            <Reweight scoretype="coordinate_constraint" weight="2.0"/>
+            <Reweight scoretype="cart_bonded" weight="0.5"/>
+        </ScoreFunction>
+        
+        <ScoreFunction name="beta" weights="beta_cart"/>
+        <ScoreFunction name="beta_aa_comp" weights="beta_cst" >
+            Reweight scoretype="coordinate_constraint" weight="2.0"/>
+            Reweight scoretype="cart_bonded" weight="0.5"/>
+            <Reweight scoretype="aa_composition" weight="1.0" />
+        </ScoreFunction>
+    </SCOREFXNS>
+    <RESIDUE_SELECTORS>
+        <ResiduePDBInfoHasLabel name="hbnet_residues" property="HBNet" />
+        <Layer name="hbnet_core" select_core="1" core_cutoff="3.6" />
+        <Neighborhood name="around_hbnet" selector="hbnet_residues" distance="5.0" />
+        <And name="core_around_hbnet" selectors="hbnet_core,around_hbnet"/>
+        <SecondaryStructure name="loops" ss="L"/>
+        <SecondaryStructure name="helices" ss="H"/>
+        <SecondaryStructure name="sheets" ss="E"/>
+        only reserve polar aas
+        <Index name="design_residues" resnums="4,6,8,54,26,29,33,58,60,71,77,81,99,106,149,131"/>
+        <Not name="no_design_please" selector="design_residues"/>
+        Index name="no_design_please" resnums="design_residues"/>
+        
+        Index name="no_design_please" resnums="1,7-22,24,26-28,33-54,61-65,68,70,73,74,80-95,100,101,103,106-127,130,132,134-141,143,144,145,148,59,57,55,1,3,5,7,30,24,103,97,98,69,96,66,67,104,102,79,72,129,142,140,25,23,31,133,75,56,76,78,2"/>
+        1,74,81,82,54,8,9,33,51,52,59,68,70,71,7,20,24,137,138,59,61-65,68,97,103,106,127,132,134-141,143,144,148
+        Index name="no_packing_please" resnums="1,9-22,26-28,34-53,61-66,73-74,82-95,100-101,107-126,134-139,146-149"/>
+        Index name="interface" resnums="2,4,6,8,25,26,29,31,33,54,56,58,60,66,67,69,71,75,77,79,81,98,99,102,104,106,127,129,131,133,139,140,142,144,148,149"/>
+        ResiduePDBInfoHasLabel name="hbnet_residues" property="HBNet" />
+        <Layer name="core_or_boundary_or_surface" select_core="true" select_boundary="true" select_surface="true"/>
+        <Layer name="core_or_boundary" select_core="true" select_boundary="true" select_surface="0"/>
+        <Layer name="core" select_core="true" select_boundary="false" select_surface="false" use_sidechain_neighbors="true" core_cutoff="3.6" />
+        <Layer name="surface" select_core="false" select_boundary="false" select_surface="true" surface_cutoff="10" use_sidechain_neighbors="true"/>
+        <ResidueName name="polar_aas" residue_name3="SER,THR,ASN,GLN,HIS,TYR,TRP,ASP" />
+        from Me!
+        <ResidueName name="non_polar_aas" residue_name3="ALA,GLY,ILE,LEU,PRO,VAL" />
+        Neighborhood name="around_loops" distance="6.0" selector="loops"/>
+        <Neighborhood name="between_sheets" distance="5.0" selector="sheets"/>
+        Not name="not_around_loops" selector="around_loops"/>
+        <Not name="not_between_sheets" selector="between_sheets"/>
+        And name="hbnets_around_loops" selectors="around_loops,non_polar_aas"/>
+        change selectors = polar_aas --> non_polar_aas (between sheets)
+        <And name="hbnets_between_sheets" selectors="polar_aas,between_sheets"/>
+        <And name="hbnets_search_non_polar" selectors="non_polar_aas,between_sheets"/>
+    </RESIDUE_SELECTORS>
+    <TASKOPERATIONS>
+        ReadResfile name="rrf" filename= "step3_redesign/4mak_res.resfile"/>
+        <OperateOnResidueSubset name="no_design" selector="no_design_please">
+            <PreventRepackingRLT/>
+        </OperateOnResidueSubset>
+        OperateOnResidueSubset name="design" selector="interface">
+        ProteinInterfaceDesign/>
+        /OperateOnResidueSubset>
+        <DesignAround name="interface_design" resnums_allow_design="1" resnums="4,6,8,54,26,29,33,58,60,71,77,81,99,106,149,131"/>
+        surface polar:
+        non-polar outer loop (no design): 98,69,96,66,67,104,102,79,129,142,140,25,23,31,131,133,56
+        --> design non_polar later
+        make to non-polar:2,75
+        <RestrictToRepacking name="repack_only" />
+        <IncludeCurrent name="current"/>
+        <LimitAromaChi2 name="arochi" include_trp="1"/>
+        <ExtraRotamersGeneric name="ex1_ex2" ex1="1" ex2="1"/>
+        <ExtraRotamersGeneric name="ex1" ex1="1"/>
+        <InitializeFromCommandline name="init"/>
+        <OperateOnResidueSubset name="hbnet_task" selector="hbnet_residues">
+            <RestrictToRepackingRLT/>
+        </OperateOnResidueSubset>
+        
+        <OperateOnResidueSubset name="only_sheets_designable" selector="not_between_sheets">
+            around loops to prevent repacking
+            <PreventRepackingRLT/>
+        </OperateOnResidueSubset>
+        <OperateOnResidueSubset name="hbnets_fixed_non_polar" selector="hbnets_search_non_polar">
+            <PreventRepackingRLT/>
+        </OperateOnResidueSubset>
+        <OperateOnResidueSubset name="hbnets_fixed_polar" selector="hbnets_between_sheets">
+            <PreventRepackingRLT/>
+        </OperateOnResidueSubset>
+        <ConsensusLoopDesign name="disallow_non_abego_aas"/>
+        PreventResiduesFromRepacking name="nopack" residues="1,8-22,26-28,34-53,61-66,73-74,82-95,100-101,107-126,134-139,146-149,68,70,72,59,57,55,1,3,5,7,30,24,141,143,145,74,76,78,80,103,97" />
+        LayerDesign name="init_layers" layer="surface_boundary" make_pymol_script="0" use_sidechain_neighbors="True" core="3.6">
+        core>
+        all exclude="STNQHYWR"/>
+        /core>
+        surface>
+        all copy_layer="surface"/>
+        Strand exclude="AGILPV"/>
+        Strand append="STNQHYWR"/>
+        /surface>
+        boundary>
+        all copy_layer="boundary"/>
+        Strand append="STNQHYWR"/>
+        all exclude="STNQHYWR"/>
+        /boundary>
+        /LayerDesign>
+        <LayerDesign name="init_layers" layer="Nterm_core_boundary_Cterm" make_pymol_script="0" use_sidechain_neighbors="True" core="3.6" >
+            <core>
+                Helix append="STNQHYWR"/>
+                Strand append="DEHKNQRST"/>
+                Strand append="YDEHNST"/>
+                <Strand append="YDQRKE"/>
+            </core>
+            boundary>
+                Helix exclude="EKRW"/>
+                Strand append="DEHKNQRST"/>
+                Strand append="YDEHNST"/>
+                Strand append="QRKE"/>
+            /boundary>
+            surface>
+                all copy_layer="surface"/>
+                Strand exclude="AGILPV"/>
+                Strand append="STNQHYWR"/>
+                Strand append="QRK"/>
+                Strand exclude="WYHNQST"/>
+            /surface>
+        </LayerDesign>
+        <LayerDesign name="layer_SASA" layer="Nterm_core_boundary_Cterm" make_pymol_script="0" use_sidechain_neighbors="0" core="35" surface="45">
+            <core>
+                all append="YDERHKSTMNQ"/>
+                at first, use both Strand
+                <Strand append="YD"/> work
+                Strand append="DSTN"/>
+                <Strand exclude="ST"/> work
+            </core>
+            boundary>
+                Make boundary with long residues
+                all append="YEHNQ"/>
+                all append="QRKE"/> work
+                all append="YDERHKSTMNQ"/> too much
+                all exclude="WYHNQST"/> work
+                all exclude="AGILPVFCM"/>
+                Strand append="ST"/>
+            /boundary>
+            surface>
+                all append="ERKMQ"/>
+                all append="YDERHKSTMNQ"/>too much
+                all append="QRKE"/> work
+                at first, use both strand
+                all exclude="WYHNQST"/> work
+                all exclude="AGILPVFCM"/>
+                Strand exclude="AGILPV"/>
+                Strand append="STNQHYWR"/>
+            /surface>
+        </LayerDesign>
+        
+    </TASKOPERATIONS>
+    <FILTERS>
+        <ScoreType name="scorefilter" scorefxn="hard" score_type="total_score" threshold="50.0" confidence="0" />
+        <EnzScore name="cst_score" score_type="cstE" scorefxn="beta" whole_pose="1" energy_cutoff="1" confidence="1"/>
+        <BuriedUnsatHbonds name="uhb" scorefxn="hard" cutoff="1" task_operations="init_layers,no_design" confidence="0"/>
+        BuriedUnsatHbonds2 name="uhb2" scorefxn="hard" cutoff="1" task_operations="init_layers,no_design" AHD_cutoff="90" confidence="0"/>
+        <ResidueCount name="TRP" max_residue_count="0" residue_types="TRP" confidence="0"/>
+        <ResidueCount name="ALA" max_residue_count="0" residue_types="ALA" confidence="0"/>
+        <ResidueCount name="VAL" max_residue_count="0" residue_types="VAL" confidence="0"/>
+        <ResidueCount name="GLY" max_residue_count="0" residue_types="GLY" confidence="0"/>
+        <ResidueCount name="ILE" max_residue_count="0" residue_types="ILE" confidence="0"/>
+        <ResidueCount name="PRO" max_residue_count="0" residue_types="PRO" confidence="0"/>
+        <ResidueCount name="LEU" max_residue_count="0" residue_types="LEU" confidence="0"/>
+        <ResidueCount name="PHE" max_residue_count="0" residue_types="PHE" confidence="0"/>
+        <ResidueCount name="SER" max_residue_count="1" residue_types="SER" confidence="0"/>
+        <ResidueCount name="THR" max_residue_count="1" residue_types="THR" confidence="0"/>
+        <BuriedUnsatHbonds name="new_buns_HBNet" scorefxn="hard" cutoff="20" print_out_info_to_pdb="true" ignore_surface_res="true" residue_surface_cutoff="20.0" ignore_bb_heavy_unsats="true" residue_selector="hbnet_residues" confidence="0"/>
+        <BuriedUnsatHbonds name="new_buns_sc_heavy" scorefxn="hard" cutoff="0" use_reporter_behavior="true" report_sc_heavy_atom_unsats="true" print_out_info_to_pdb="true" ignore_surface_res="true" residue_surface_cutoff="20.0" ignore_bb_heavy_unsats="false" confidence="0"/>
+        <BuriedUnsatHbonds name="new_buns_bb_heavy" scorefxn="hard" cutoff="2" use_reporter_behavior="true" report_bb_heavy_atom_unsats="true" print_out_info_to_pdb="true" ignore_surface_res="true" residue_surface_cutoff="20.0" ignore_bb_heavy_unsats="false" confidence="0"/>
+        <ExposedHydrophobics name="exposedhydrop" sasa_cutoff="20" threshold="0" confidence="0"/>
+        <Holes name="network_holes" threshold="1.8" residue_selector="core_around_hbnet" normalize_per_atom="true" exclude_bb_atoms="true" confidence="0"/>
+    </FILTERS>
+    <MOVERS>
+        <ClearConstraintsMover name="clearconstraints"/>
+        <AddConstraintsToCurrentConformationMover name="add_cst" use_distance_cst="0" coord_dev="2.0" CA_only="true"/>
+        <MinMover name="hardmin_bb" scorefxn="bbmin_hard_cart" type="lbfgs_armijo_nonmonotone" tolerance="0.0001" chi="0" bb="1" bondangle="1" bondlength="1" jump="all" cartesian="1"/>
+        <MinMover name="hardmin_sconly" scorefxn="hard_cst" chi="1" bb="0" bondangle="0" bondlength="0" />
+        no_heavy_unsats_allowed="1" design_residues="DERHSTK" monte_carlo="false"  design_residues="STRKHYWNQDE"  max_unsat_Hpol="10"
+        remove "no_design" no_unsats_allowed = 0 more stringent
+        HBNetStapleInterface scorefxn="hard" find_only_native_networks="0" name="hbnet_interf"  hb_threshold="-0.1" min_helices_contacted_by_network="0" core_selector="core" show_task="0" no_heavy_unsats_allowed="1" store_subnetworks="1" verbose="0" write_network_pdbs="0" min_network_size="3" min_core_res="2" min_unique_networks="1" write_cst_files="0" use_aa_dependent_weights="true" min_networks_per_pose="1" max_replicates_before_branch="3" store_network_scores_in_pose="1" keep_existing_networks="1" task_operations="current,arochi,ex1_ex2,interface_design,init_layers,no_design"/>
+        <HBNetStapleInterface scorefxn="hard" find_only_native_networks="0" name="hbnet_interf"  hb_threshold="-0.1" min_helices_contacted_by_network="0" core_selector="core" show_task="0" no_heavy_unsats_allowed="0" store_subnetworks="1" verbose="0" write_network_pdbs="0" min_network_size="2" min_core_res="2" min_unique_networks="1" write_cst_files="0" use_aa_dependent_weights="true" min_networks_per_pose="2" max_networks_per_pose="4" max_replicates_before_branch="3" store_network_scores_in_pose="1" keep_existing_networks="1" extend_existing_networks="1" task_operations="current,arochi,ex1_ex2,no_design"/>
+        
+            design_residues="YDEHSTN"
+        HBNetStapleInterface name="hbnet_interf" hb_threshold="-0.65" upper_score_limit="3.5" minimize="0" min_network_size="3" combos="2" onebody_hb_threshold="-0.3" task_operations="init,current,arochi,ex1_ex2,init_layers,disallow_non_abego_aas,no_design"/>
+        HBNetStapleInterface scorefxn="soft" name="hbnet_interf" hb_threshold="-0.5" design_residues="NSTQHYW" write_network_pdbs="true" min_networks_per_pose="1" max_networks_per_pose="4" use_aa_dependent_weights="true" min_core_res="2" min_network_size="3" max_unsat_Hpol="3" onebody_hb_threshold="-0.3" task_operations="arochi,init_layers,current" />
+        HBNetStapleInterface name="hbnet_interf" scorefxn = "hbnet_sfxn" hb_threshold="-0.75" upper_score_limit="2.0" write_network_pdbs="0" combos="2" min_network_size="3" onebody_hb_threshold="-0.3" show_task="1" task_operations= "current,arochi,ex1_ex2" />
+        
+        task_ops = ,layer_all below
+        remove "no_pack"
+        <PackRotamersMover name="only_design_sheets" scorefxn="hard" task_operations="only_sheets_designable,no_design,hbnets_fixed_polar,init_layers,arochi"/>
+        MSDMover name="res_setup" design_mover="hbnet_interf" resfiles="step3_redesign/4mak_res.resfile" constraint_weight="1.0" debug="false" />
+        <PackRotamersMover name="repack" scorefxn="hard" task_operations="repack_only,ex1_ex2,current,arochi"/>
+        <MultiplePoseMover name="MPM_design" max_input_poses="50">
+            <ROSETTASCRIPTS>
+                <SCOREFXNS>
+                    <ScoreFunction name="hard" weights="beta"/>
+                    <ScoreFunction name="hard_cst" weights="beta_cst"/>
+                    <ScoreFunction name="hard_cart" weights="beta_cart"/>
+                    <ScoreFunction name="up_ele" weights="beta_cst" >
+                        <Reweight scoretype="fa_elec" weight="1.4"/>
+                        <Reweight scoretype="hbond_sc" weight="2.0"/>
+                    </ScoreFunction>
+                    <ScoreFunction name="soft_cst" weights="beta_soft_rep"/>
+                </SCOREFXNS>
+                <RESIDUE_SELECTORS>
+                    Index name="no_design_please" resnums="1,7-22,24,26-28,33-54,61-65,68,70,73,74,80-95,100,101,103,106-127,130,132,134-141,143,144,145,148,59,57,55,1,3,5,7,30,24,103,97,98,69,96,66,67,104,102,79,129,142,140,25,23,31,133,75,56,2"/>
+                    <Index name="design_residues" resnums="4,6,8,54,26,29,33,58,60,71,77,81,99,106,149,131"/>
+                    <Not name="no_design_please" selector="design_residues"/>
+                    <ResiduePDBInfoHasLabel name="hbnet_residues" property="HBNet" />
+                    <Layer name="hbnet_core" select_core="1" core_cutoff="3.6" />
+                    <Neighborhood name="around_hbnet" selector="hbnet_residues" distance="5.0" />
+                    <And name="core_around_hbnet" selectors="hbnet_core,around_hbnet"/>
+                    
+                    <Layer name="pick_core_and_boundary" select_core="true" select_boundary="true" core_cutoff="3.6"/>
+                    <Layer name="pick_core_and_boundary_SASA" select_core="true" select_boundary="true" use_sidechain_neighbors="false" core_cutoff="35" surface_cutoff="45" />
+                    <Layer name="pick_core_SASA" select_core="true" use_sidechain_neighbors="false" core_cutoff="35" />
+                    <Layer name="pick_boundary_SASA" select_boundary="true" use_sidechain_neighbors="false" core_cutoff="30" surface_cutoff="45" />
+                    <Layer name="pick_core_and_surface" select_core="true" select_surface="true" core_cutoff="3.6"/>
+                    <Layer name="pick_core_and_surface_SASA" select_core="true" select_surface="true" core_cutoff="35" />
+                    <Layer name="pick_surface_and_boundary" select_surface="true" select_boundary="true" core_cutoff="3.6"/>
+                    <Layer name="pick_surface_and_boundary_SASA" select_surface="true" select_boundary="true" core_cutoff="35" surface_cutoff="45" />
+                </RESIDUE_SELECTORS>
+                <TASKOPERATIONS>
+                    <OperateOnResidueSubset name="hbnet_task" selector="hbnet_residues">
+                        <RestrictToRepackingRLT/>
+                    </OperateOnResidueSubset>
+                    <OperateOnResidueSubset name="no_design" selector="no_design_please">
+                        <PreventRepackingRLT/>
+                    </OperateOnResidueSubset>
+                    <RestrictToRepacking name="repack_only" />
+                    <IncludeCurrent name="current"/>
+                    <LimitAromaChi2 name="arochi" include_trp="1"/>
+                    <ExtraRotamersGeneric name="ex1_ex2" ex1="1" ex2="1"/>
+                    <ExtraRotamersGeneric name="ex1" ex1="1"/>
+                    <InitializeFromCommandline name="init"/>
+                    <ConsensusLoopDesign name="disallow_non_abego_aas"/>
+                    <LayerDesign name="layer_all" layer="Nterm_core_boundary_Cterm" make_pymol_script="0" use_sidechain_neighbors="True" core="3.6" >
+                        <core>
+                            <Strand append="DEHKNQRST"/>
+                            <Strand exclude="W"/>
+                        </core>
+                        <boundary>
+                            <Strand append="DEHKNQRST"/>
+                            Strand append="ST"/>
+                            <Strand exclude="W"/>
+                        </boundary>
+                        <surface>
+                            <all append="DEHKNQRST"/>
+                            <Strand exclude="W"/>
+                            Strand exclude="AGILPV"/>
+                            Strand append="STNQHYWR"/>
+                        </surface>
+                    </LayerDesign>
+                    <LayerDesign name="layer_SASA" layer="Nterm_core_boundary_Cterm" make_pymol_script="0" use_sidechain_neighbors="0" core="35" surface="45">
+                        <core>
+                            all append="YDERHKSTMNQ"/>
+                            at first, use both Strand
+                            all append="STY"/> work
+                            <Strand append="DSTN"/>
+                            <Strand exclude="AGILPVFCMW"/> work
+                        </core>
+                        <boundary>
+                            Make boundary with long residues
+                            <all append="YEHNQ"/>
+                            all append="QRKE"/> work
+                            all append="YDERHKSTMNQ"/> too much
+                            all exclude="WYHNQST"/> work
+                            <all exclude="AGILPVFCMW"/>
+                            Strand append="ST"/>
+                        </boundary>
+                        <surface>
+                            <all append="ERKMQ"/>
+                            all append="YDERHKSTMNQ"/>too much
+                            all append="QRKE"/> work
+                            at first, use both strand
+                            all exclude="WYHNQST"/> work
+                            <all exclude="AGILPVFCMW"/>
+                            Strand exclude="AGILPV"/>
+                            Strand append="STNQHYWR"/>
+                        </surface>
+                    </LayerDesign>
+                    <OperateOnResidueSubset name="design_core" selector="pick_surface_and_boundary">
+                        <PreventRepackingRLT/>
+                    </OperateOnResidueSubset>
+                    <OperateOnResidueSubset name="design_boundary" selector="pick_core_and_surface">
+                        <PreventRepackingRLT/>
+                    </OperateOnResidueSubset>
+                    <OperateOnResidueSubset name="design_surface" selector="pick_core_and_boundary">
+                        <PreventRepackingRLT/>
+                    </OperateOnResidueSubset>
+                    <OperateOnResidueSubset name="design_core_SASA" selector="pick_surface_and_boundary_SASA">
+                        <PreventRepackingRLT/>
+                    </OperateOnResidueSubset>
+                    <OperateOnResidueSubset name="design_boundary_SASA" selector="pick_core_and_surface_SASA">
+                        <PreventRepackingRLT/>
+                    </OperateOnResidueSubset>
+                    <OperateOnResidueSubset name="design_surface_SASA" selector="pick_core_and_boundary_SASA">
+                        <PreventRepackingRLT/>
+                    </OperateOnResidueSubset>
+                </TASKOPERATIONS>
+                <MOVERS>
+                    
+                    <MinMover name="hardmin_sconly" scorefxn="hard_cst" chi="1" bb="0" bondangle="0" bondlength="0" />
+                    <PackRotamersMover name="softpack_all" scorefxn="soft_cst" task_operations="init,layer_all,current,arochi,hbnet_task,disallow_non_abego_aas,no_design"/>
+                    PackRotamersMover name="hardpack_core_sn" scorefxn="hard_cst" task_operations="init,layer_all,design_core,current,arochi,ex1_ex2,hbnet_task,disallow_non_abego_aas,no_design"/>
+                    <PackRotamersMover name="softpack_core" scorefxn="soft_cst" task_operations="init,layer_all,design_core,current,arochi,hbnet_task,disallow_non_abego_aas,no_design"/>
+                    
+                    <PackRotamersMover name="softpack_boundary" scorefxn="soft_cst" task_operations="init,layer_all,design_boundary,current,arochi,hbnet_task,disallow_non_abego_aas,no_design"/>
+                    <PackRotamersMover name="softpack_surface" scorefxn="soft_cst" task_operations="init,layer_all,design_surface,current,arochi,hbnet_task,disallow_non_abego_aas,no_design"/>
+                    
+                    <PackRotamersMover name="hardpack_core" scorefxn="hard_cst" task_operations="init,layer_SASA,design_core_SASA,current,arochi,ex1_ex2,hbnet_task,disallow_non_abego_aas,no_design"/>
+                    <PackRotamersMover name="hardpack_boundary" scorefxn="hard_cst" task_operations="init,layer_SASA,design_boundary_SASA,current,arochi,ex1_ex2,hbnet_task,disallow_non_abego_aas,no_design"/>
+                    
+                    <PackRotamersMover name="hardpack_surface" scorefxn="up_ele" task_operations="init,layer_SASA,design_surface_SASA,current,arochi,ex1,hbnet_task,disallow_non_abego_aas,no_design"/>
+                    
+                    <MinMover name="hardmin_cart" scorefxn="hard_cart" type="lbfgs_armijo_nonmonotone" tolerance="0.0001" chi="1" bb="1" bondangle="1" bondlength="1" jump="ALL" cartesian="1"/>
+                    # repack without HBNet constraints to see if the networks stay put
+                    <PackRotamersMover name="repack" scorefxn="hard" task_operations="init,current,arochi,ex1_ex2,repack_only"/>
+                </MOVERS>
+                <APPLY_TO_POSE>
+                </APPLY_TO_POSE>
+                <PROTOCOLS>
+                    <Add mover="softpack_all"/>
+                    <Add mover="softpack_core"/>
+                    <Add mover="softpack_boundary"/>
+                    <Add mover="softpack_surface"/>
+                    <Add mover="hardmin_sconly"/>
+                    <Add mover="hardpack_core"/>
+                    <Add mover="hardpack_boundary"/>
+                    <Add mover="hardpack_surface"/>
+                    <Add mover="hardmin_cart"/>
+                    <Add mover="repack"/>
+                </PROTOCOLS>
+            </ROSETTASCRIPTS>
+        </MultiplePoseMover>
+        
+        MultiplePoseMover name="MPM_min_repack" max_input_poses="2"/>
+        SetupForSymmetry   name="setup_symm" definition="step3_redesign/4mak.symm"/>
+        SymPackRotamersMover name="sym_pack" scorefxn="sym_score" task_operations="ifcl,rrf"/>
+        <FastDesign name="fdes1" scorefxn="beta_aa_comp" repeats="1" ramp_down_constraints="false" task_operations="init,current,arochi,ex1,hbnet_task" />
+        <InterfaceAnalyzerMover name="interface_analyzer" scorefxn="hard_cst" packstat="1" pack_input="0" pack_separated="1" interface_sc="1"/>
+        ClearCompositionConstraintsMover name="clear_aa_comp_cst" />
+        <Superimpose name="align"/>
+        Satisfier name="satisfy" scorefxn="beta" repack="false" design="true" residue_surface_cutoff="20.0"/>
+        <GenericMonteCarlo name="fdes_gmc" filter_name="new_buns_sc_heavy" sample_type="low" mover_name="fdes1" trials="5" >
+        </GenericMonteCarlo>
+        
+        <MultiplePoseMover name="MPM_min_repack" max_input_poses="50">
+            <ROSETTASCRIPTS>
+                <SCOREFXNS>
+                    <ScoreFunction name="hard" weights="beta" />
+                </SCOREFXNS>
+                <RESIDUE_SELECTORS>
+                </RESIDUE_SELECTORS>
+                <TASKOPERATIONS>
+                    OperateOnResidueSubset name="no_packing" selector="no_packing_please">
+                    PreventRepackingRLT/>
+                    /OperateOnResidueSubset>
+                    <RestrictToRepacking name="repack_only" />
+                    <IncludeCurrent name="current"/>
+                    <LimitAromaChi2 name="arochi" />
+                    <ExtraRotamersGeneric name="ex1_ex2" ex1="1" ex2="1"/>
+                </TASKOPERATIONS>
+                <MOVERS>
+                    <MinMover name="hardmin_sconly" scorefxn="hard" chi="1" bb="0" bondangle="0" bondlength="0" />
+                    <PackRotamersMover name="repack" scorefxn="hard" task_operations="repack_only,ex1_ex2,current,arochi"/>
+                </MOVERS>
+                <APPLY_TO_POSE>
+                </APPLY_TO_POSE>
+                <PROTOCOLS>
+                    <Add mover="hardmin_sconly"/>
+                    <Add mover="repack" />
+                </PROTOCOLS>
+            </ROSETTASCRIPTS>
+        </MultiplePoseMover>
+        
+    </MOVERS>
+    <APPLY_TO_POSE>
+    </APPLY_TO_POSE>
+    <PROTOCOLS>
+        <Add mover="only_design_sheets"/>
+        <Add mover="hardmin_sconly"/>
+        <Add mover="add_cst"/>
+        <Add mover="hardmin_bb"/>
+        Add mover_name="setup_symm"/>
+        <Add mover="clearconstraints"/>
+        <Add mover="hbnet_interf"/>
+        Add mover="hbnet_interf_SASA"/>
+        Add mover_name="sym_pack"/>
+        Add mover_name="res_setup"/>
+        <Add mover="MPM_design"/>
+        Add mover="add_cst"/>
+        <Add filter="TRP"/>
+        <Add filter="THR"/>
+        <Add filter="SER"/>
+        <Add filter="ALA"/>
+        <Add filter="GLY"/>
+        <Add filter="ILE"/>
+        <Add filter="LEU"/>
+        <Add filter="PRO"/>
+        <Add filter="PHE"/>
+        Add filter="cst_score"/>
+        <Add mover="MPM_min_repack"/>
+        Add mover="MPM_filters"/>
+        Add mover="satisfy"/>
+        <Add filter="new_buns_HBNet"/>
+        <Add filter="new_buns_sc_heavy"/>
+        <Add filter="new_buns_bb_heavy"/>
+        <Add filter="exposedhydrop" />
+        <Add filter="uhb"/>
+        <Add filter="network_holes"/>
+        <Add mover="repack"/>
+        <Add mover="interface_analyzer"/>
+        Add mover="align"/>
+    </PROTOCOLS>
+</ROSETTASCRIPTS>
+
+
+

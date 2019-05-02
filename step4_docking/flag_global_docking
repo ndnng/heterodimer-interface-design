@@ -1,0 +1,19 @@
+-in:file:s input_files1/overall_design_4mak_HBnet_nearby.pdb
+-in:file:native input_files1/4mak_copy_A,B.pdb
+-unboundrot input_files1/overall_design_4mak_HBnet_nearby.pdb
+
+-nstruct 500
+
+-partners A_B
+-dock_pert 3 8
+-spin
+-randomize1
+-randomize2
+
+-ex1
+-ex2aro
+
+-overwrite
+-out:path:all output_files_globaldock
+-out:suffix _global_dock
+

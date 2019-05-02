@@ -1,0 +1,19 @@
+-database /Applications/rosetta_bin_mac_2018.33.60351_bundle/main/database/
+-beta
+-s step3_redesign/4mak_copy_A,B.pdb
+-in:file:fullatom
+-multi_cool_annealer 10
+-renumber_pdb 1
+-run:min_type lbfgs_armijo_nonmonotone
+-overwrite
+-out:path step3_redesign/output_files3
+-out::file::pdb_comments
+-out:prefix new_des3_
+#-nstruct 1
+-chemical:exclude_patches LowerDNA  UpperDNA Cterm_amidation VirtualBB ShoveBB VirtualDNAPhosphate VirtualNTerm CTermConnect sc_orbitals pro_hydroxylated_case1 pro_hydroxylated_case2 ser_phosphorylated thr_phosphorylated  tyr_phosphorylated tyr_sulfated lys_dimethylated lys_monomethylated  lys_trimethylated lys_acetylated glu_carboxylated cys_acetylated tyr_diiodinated N_acetylated C_methylamidated MethylatedProteinCterm
+-parser:protocol step3_redesign/inputs/interface_design3.xml
+-holes:dalphaball /Applications/rosetta_bin_mac_2018.33.60351_bundle/main/source/external/DAlpahBall/DAlphaBall.gcc
+#-lk_bridge_cutoff -0.01
+-lk_ball_water_fade 1.0
+#to prevent waters from being virtualized, even if score poorly
+-include_vrt false
