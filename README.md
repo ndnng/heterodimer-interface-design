@@ -1,0 +1,59 @@
+Computationally Engineering Energetically Favorable Cas2 Heterodimeric Interface by Rosetta Commons 
+
+Nhan D. Nguyen
+
+Topics: Protein Engineering
+
+Instructor: Walter Novak, Ph.D.
+
+Department of Chemistry, Wabash College, IN 47933
+
+April 24, 2019
+
+ABSTRACT
+
+Computational design aims to design proteins with stability and specificity. Nature-based design could potentially result in structures that carry certain customized functionality. One of those remarkable protein designs is to model a H-bond network between the side-chain interface. In order to carry out functions, proteins need to be stabilized and well folded into a certain shape comprised of alpha helical loops, beta strands, and beta turns (1). Previous studies have learned that beta-sheet interface stabilizes more when packed with hydrophobic branched aliphatic amino acids, favoring more Isoleucine, Leucine, and Valine over Tryptophan and Tyrosine (2,3). Even water-accessible areas, hydrophobic core is still a favorable choice. 
+	Our study has computationally engineered the interface of ssRNA endonuclease Cas2 with replacing its hydrophobic core with close-knit H-bonding networks, yielding better (lower) score than wide-type protein (PDB 4mak). Cas2 was chosen as a model for study, because it involves in the CRISPR adaptation system in which cells customize the Cas system for interfering DNA invaders or foreign genetic elements (4). Once reconstructed for better stability, the research could propose better Cas2 model supplementing to precise genomic editing. 
+	The research has found the new models of 4mak yielded much lower energy scores (-505 to -550) than wide-type’s (-284) evaluated by Rosetta’s scoring method. Two constructs were built with higher stability than wide-type. 
+
+INTRODUCTION
+
+Reconstructing interface models were based on two pathways. The first model designed in all three areas (core, surface, and interface) in the way that the interface core was tacked with small aromatic and short branched amino acids (S,T,Y,D), boundary and surface were tacked with bulkier and longer branched amino acids (Q,R,K,E). The second model designed H-bonding networks in only the interface core and redesigned other H-bonding amino acids from the wide-type already at the interface. Boundary and surface hydrophobic residues were redesigned for more favorable hydrophobic residues with resfile (more detail in the procedure). Abinitio monomer design has shown the formation of interface although the helical structures were quite disrupted due to instability out of the dimer. Final Rosetta designs get w
+	4mak designs was then prepared for experimental testing. Q5 site-directed mutagenesis would be conducted for remodeling the DNA sequence.  The study also aimed to renew the DNA sequence without changing the protein residues. As such, it would change the nucleotide codons dictating the same amino acids, but these changes would lower the base changes for mutations. Those whole process was coded on Python. 
+  
+PROCEDURES
+
+Programming work was extensively done on Rosetta Commons software for protein design. Several Python codes were written for score analysis and plotting. 
+Rosetta design protocol (XML files) has 7 parts to enable the whole designing process. <SCOREFXNS> was determined to evaluate each mover which commands how Rosetta does to the model protein. Weights could also be reweighted for constructing purposes. <RESIDUE_SELECTORS> was called to define fundamental protein features including layers (core, surface, and boundary) and residues for designing targets. <TASKOPERATIONS> decides the tasks operated on those features of the residue selectors; important tasks include loading the resfile, operating tasks on some sets of selectors, and locating and characterizing each layer, core, surface, and boundary. <FILTERS> was used to remove unsatisfied proteins after final conditioning and limit numbers of certain amino acids. <MOVERS> contains all steps for design modules. Main tasks are constraint removal, and then HBnet (H-bonding net) searching for the best-fit location for imposing H-bonding. Inside the <MOVERS>, 2 main packing sessions. <PROTOCOLS> was set up to arrange the design process by orderly calling movers and filters. 
+Our protein design was conducted in 5 steps. Protein PDB 4mak was chosen for our model of study, since it comprises of an interface that could be applied some changes of H-bonding networks. In the first step, symm, a XML file was prepared for generating a symmetrical construct to bind the 4mak monomer’s interface. From preliminary design from step 1, step 2 includes a resfile to determine several amino acid identity constraints while designing the structure. Once getting the symmetrical design running, the focus is pointed to remodel the interface of the 4mak. Step 3 was the longest part of our study to enable heterodimer designs within the interface. The XML file in step 3 requires 2 movers of repacking: multiple pose mover (MPM_design), and multiple pose repack (MPM_min_repack). MPM_design enables multi-layer repacking from softly packing core, boundary, and interface to hard packing those 3 again. MPM_min_repack repacks among all the bonds depending on their lengths and rotation angles. After redesigning the interface, step 3 involves another round of redesigning hydrophobic residues within the interface by using a resfile. The resfile imposes H-bonding amino acid side chains within the interface and prompt the hydrophobic designs for the other interface non-H-bonding residues. Redesigning with resfile resembles the repacking process mentioned earlier but involves loading the resfile for customizing each design step. Glycines were preserved in resfile for internal flexibility and rotation of protein folding (5). Flags set for running include -chemical:exclude_patches LowerDNA  UpperDNA Cterm_amidation VirtualBB ShoveBB VirtualDNAPhosphate VirtualNTerm CTermConnect sc_orbitals pro_hydroxylated_case1 pro_hydroxylated_case2 ser_phosphorylated thr_phosphorylated  tyr_phosphorylated tyr_sulfated lys_dimethylated lys_monomethylated  lys_trimethylated lys_acetylated glu_carboxylated cys_acetylated tyr_diiodinated N_acetylated C_methylamidated MethylatedProteinCterm, and filtering holes. After designing the heterodimer interface, two monomers in the 4mak design were pulled apart about 10Å before enabling the local and global docking protocols. Abinitio designs of both monomers were done on Robetta.org and then got ready for the docking process. 
+Python codes score_analysis.ipynb was written for searching the best, lowest scores of 4mak design structures. renew_codon_mismatch.ipynb code is for redesign the DNA sequence without changing the translated wide-type protein, but the DNA sequence is made easier for point mutations with lowest numbers of nucleotide change.
+All Rosetta source codes were deposited on github.com/ndnguyen20/heterodimer_interface_design
+The Rosetta codes was shared by Dr. Novak’s work at the Baker lab, University of Washington, Seattle and based off on the source code taken from https://github.com/uagaug/DeNovoHeterodimers shared by Zibo Chen also in the Baker lab. 
+DNA clone for E coli is based on pET-24a. Insertion is between NdeI and Not1 restriction sites. 4mak is the protein of Cas2 DNA sequence. Q5 site-directed mutagenesis was used for inserting our new design sequence on wide-type vector. 
+
+RESULTS AND DISCUSSION
+
+Two XML protocols in step 3 were made for designing the interface side-chains. The first protocol interface_design was enabling the design of all core, boundary, and surface sites of the interface. Core are those sidechains in close contact below 35Å, surface pointing outward above 45Å, and boundary between 35-45Å in vicinity. Core residues contains less bulky and shorter sidechains, namely the group of S,T,Y,D. Boundary and surface resides contains longer and more bulky sidechains, namely the group of Q,R,K,E. The layer design task actively avoids the design of hydrophobic groups and tryptophan. After designing, multiple filters were passed again to search the existence of hydrophobic groups and tryptophan. DesignAround task was to call residue sites for design, while those not called were not designed but repacked only. 
+	The second design protocol interface_design2 changed the sites of design. Instead of designing all areas within the interface, it would allow in DesignAround to only design at core and original H-bonding networks, while leaving boundary and surface hydrophobic sites intact. This protocol is necessary when the first design was removing all hydrophobic sites and allowing to mutate all of the sites to H-bonding networks. It could be problematic if the interface was not recognized when each monomer found between each other the H-bonding networks that exist everywhere on their surfaces. 
+	A protocol called interface_design3 is a modified version of interface_design that just attempted to target more specific sites and leave all other sites intact. It also enabled more search of point mutations between any pair of hydrophilic residues, and so takes more work to get the design done. The protocol is still under construction, because it requires more time to run while searching broader interface than interface_design2.
+	Final scoring gets -553.7 for design1, -503.7 for design2, whereas the widetype structure gets -284.4. This shows that our design has achieved stronger stability. Covering the outer layer of the interface in design 2 helps increase greater specificity and better stability than fully-H-network-packing of design1’s interface.  
+	Before mutagenesis, E. coli sequence Cas2 Q5 site-directed mutagenesis have been recently planned. The procedure involved making 4 insertions with 16 nucleotide changes. 
+  
+CONCLUSIONS
+
+The research took its step to build a new interface model of H-bonding networks. The study has reported stable designs of beta sheet interface design with significant lower energy scores than the wide-type’s.
+	Rosetta design has built a new interface model of 4mak Cas2 protein. With low scoring of structure design, it has shown the new design worked in term of energetically favorable stability and close-knit packing core. It is important to identify and initiate which designs are worth making. Specificity of interface interaction was concerned so that the second interface design protocol was made for that purpose. Abinitio designs of each monomer shows a slight success in retain the interface while the helical sheets were not fully formed. The half-formed structure potentially resulted from the instability of a single monomer broken off the functioning dimer. As the interface has been observed, it is confident to move forward with site-directed mutagenesis to achieve our experimental structure. 
+	Future study could be focused on evolution protein analysis for quicker protein design and functional proteins. Residue changes cost long time to process, so parallelized protocol could be suggested. 
+  
+ACKNOWLEDGEMENT
+
+I want to thank Dr. Walter Novak for supervising the project, giving codes, and providing solid understandings of protein design. The codes were adapted from the heterodimer code design provided by Zibo Chen from the Baker lab. I also want to thank Chemistry Department at Wabash College for generous support and providing resources for this study.
+
+REFERENCES
+
+(1)	Havranek, J. J. Journal of Biological Chemistry 2010, 285 (41), 31095–31099.
+(2)	Merkel, J. S.; Sturtevant, J. M.; Regan, L. Structure 1999, 7(11), 1333–1343.
+(3)	Joo, H.; Tsai, J. Proteins: Structure, Function, and Bioinformatics 2014, 82(9), 2128–2140.
+(4)	Krivoy, A.; Rutkauskas, M.; Kuznedelov, K.; Musharova, O.; Rouillon, C.; Severinov, K.; Seidel, R. Nucleic Acids Research 2018, 46(8), 4087–4098.
+(5)	Neurath, H. Journal of the American Chemical Society 1943, 65(10), 2039–2041.
+
