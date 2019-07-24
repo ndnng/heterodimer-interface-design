@@ -1,4 +1,4 @@
-Computationally Engineering Energetically Favorable Cas2 Heterodimeric Interface by Rosetta Commons 
+Engineering Energetically Favorable Cas2 Heterodimeric Interface by Rosetta Commons 
 
 Nhan D. Nguyen
 
